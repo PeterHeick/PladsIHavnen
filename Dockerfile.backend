@@ -1,0 +1,22 @@
+# Brug en officiel Node.js runtime som base image
+FROM node:16
+
+# Opret app-kataloget
+WORKDIR /usr/src/app
+
+# Kopiér package.json og yarn.lock
+COPY backend/package.json backend/yarn.lock ./
+COPY backend/dist/frontend.env ./.env
+
+# Installer afhængigheder
+RUN yarn install --production
+
+# Kopiér dist/ mappen og nødvendige filer
+COPY backend/dist/ ./dist/
+COPY frontend/dist/ ./frontend/dist
+
+# Eksponér porten som din app bruger
+EXPOSE 3003
+
+# Start appen
+CMD ["yarn", "start"]

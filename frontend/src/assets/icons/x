@@ -1,0 +1,9 @@
+convert  anchor.svg anchor.png
+convert  boat.svg boat.png
+convert  diesel.svg diesel.png
+convert  download-minimalistic-svgrepo-com.svg download-minimalistic-svgrepo-com.png
+convert  electricity.svg electricity.png
+convert  pole-space.svg pole-space.png
+convert  pump.svg pump.png
+convert  toilet.svg toilet.png
+convert  water.svg water.png

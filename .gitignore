@@ -1,0 +1,40 @@
+.DS_Store
+node_modules
+/dist
+dist
+
+# Sytem Files
+package-lock.json
+yarn.lock
+package.json
+
+
+# local env files
+.env.local
+.env.*.local
+.env
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+*.tar
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+test-project
+test
+trash
+unisoft_qr_code.png
+Er_der_plads_i_havnen.odt
+server.cert
+server.key

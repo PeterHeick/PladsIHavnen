@@ -1,0 +1,10 @@
+FROM postgres:13
+
+# Installer PostGIS pakker
+RUN apt-get update \
+    && apt-get install -y postgis postgresql-13-postgis-3 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Tilføj PostGIS til den standard database
+RUN mkdir -p /docker-entrypoint-initdb.d
+COPY ./init-postgis.sh /docker-entrypoint-initdb.d/postgis.sh
