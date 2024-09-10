@@ -16,8 +16,8 @@ services:
       - "5432:5432"
     networks:
       - backend_network
-    env_file:
-      - /etc/unisoft/config/.env
+    # env_file:
+      # - /etc/unisoft/config/.env
 
   backend:
     container_name: erderpladsihavnen_backend
@@ -32,10 +32,12 @@ services:
       - db
     networks:
       - backend_network
-    env_file:
-      - /etc/unisoft/config/.env
+    # env_file:
+      # - /etc/unisoft/config/.env
     volumes:
-      - /etc/ssl/unisoft:/usr/src/app/ssl
+      - /etc/ssl/pladsihavnen:/usr/src/app/ssl
+      - .env:/usr/src/app/.env
+      - ./backend/.ssl:/usr/src/app/.ssl
 
 volumes:
   erderpladsihavnen_db:

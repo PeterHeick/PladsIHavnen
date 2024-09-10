@@ -20,6 +20,10 @@ yarn build
 yarn lint
 ```
 
+### Telefon debug
+Start google chrome
+chrome://inspect/#devices
+
 ### OBS
 Når URL'en ændres skal der ændres i .env og i src/config.ts
 Gå ind i Udviklerværktøj under Lager / Cache Storage og slet cachen
@@ -76,3 +80,24 @@ See [Configuration Reference](https://cli.vuejs.org/config/).
         Database Operation: Backend’en modtager POST-anmodningen og gemmer markøren i databasen.
         PostGIS: Hvis du bruger PostGIS, vil markørens lat og lng blive gemt som en geografisk GEOMETRY eller GEOGRAPHY type i databasen.
         Respons til Frontend: Backend’en sender en respons tilbage til applikationen, som bekræfter, at markøren er gemt.
+
+## Google maps noter
+### Example code
+      https://developers.google.com/maps/documentation/javascript/add-google-map
+### AdvancedMarkerElement
+      https://developers.google.com/maps/documentation/javascript/reference/advanced-markers
+### controls
+      https://developers.google.com/maps/documentation/javascript/controls
+        {
+          zoomControl: boolean,
+          mapTypeControl: boolean,
+          scaleControl: boolean,
+          streetViewControl: boolean,
+          rotateControl: boolean,
+          fullscreenControl: boolean
+        }
+### MapOptions
+  https://developers.google.com/maps/documentation/javascript/reference/map#MapOptions
+
+
+  

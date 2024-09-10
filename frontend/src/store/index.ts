@@ -1,46 +1,33 @@
-import { createStore } from "vuex";
-import markersModule from "./modules/markerModule";
-import { Harbor, Position, LocationMarker, RootState } from "@/types";
-import mapModule from "./modules/mapModule";
+import { createStore, Store, ModuleTree } from 'vuex';
+import { RootState, State, Position, MarkerState, HarborState } from '@/types';
+import markerModule from './modules/markerModule';
+import harborModule from './modules/harborModule';
+// import mapModule from './modules/mapModule';
 
-export default createStore<RootState>({
+const store = createStore({
   state: {
-    harborName: '',
-    harbor: undefined,
-    selectedHarbor: undefined,
+    globalError: null,
     userPosition: null,
-    markers: [],
-    error: null
-  },
-    // harbors: [],
-
-  getters: {
-    // nearbyHarbors: (state) => {
-    //   // Returner harbors sorteret efter afstand til bruger
-    //   return state.harbors;
-    // },
-    allMarkers: (state) => {
-      return state.markers;
-    }
-  },
+  } as RootState,
   mutations: {
-    // setHarbor(state, harbor) {
-    //   state.harbor = harbor;
-    // },
-    // // setHarbors(state, harbors) {
-    // //   state.harbors = harbors;
-    // // },
-    // selectHarbor(state, harbor) {
-    //   state.selectedHarbor = harbor;
-    // },
-    // setUserPosition(state, position) {
-    //   state.userPosition = position;
-    // },
+    SET_GLOBAL_ERROR(state, error: string | null) {
+      state.globalError = error;
+    },
+    SET_USER_POSITION(state, position: Position | null) {
+      state.userPosition = position;
+    },
   },
   actions: {
+    // Globale actions...
+  },
+  getters: {
+    // Globale getters...
   },
   modules: {
-    markers: markersModule,
-    map: mapModule
-  },
-});
+    marker: markerModule,
+    harbor: harborModule,
+    // map: mapModule
+  }
+}) as Store<State>;
+
+export default store;

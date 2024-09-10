@@ -13,6 +13,7 @@
     "sourceMap": true,
     "resolveJsonModule": true,
     "baseUrl": ".",
+    "outDir": "./dist",
     "types": [
       "webpack-env"
     ],
@@ -34,8 +35,9 @@
     "src/**/*.vue",
     "tests/**/*.ts",
     "tests/**/*.tsx"
-  ],
+, "old/MapView copy.xx", "src/components/UpdateNotification.vue.xx", "src/services/updateService.ts.xx"  ],
   "exclude": [
+    "./dist",
     "node_modules"
   ]
 }

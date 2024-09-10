@@ -6,14 +6,14 @@ WORKDIR /usr/src/app
 
 # Kopiér package.json og yarn.lock
 COPY backend/package.json backend/yarn.lock ./
-COPY backend/dist/frontend.env ./.env
+COPY .env .env
 
 # Installer afhængigheder
 RUN yarn install --production
 
 # Kopiér dist/ mappen og nødvendige filer
 COPY backend/dist/ ./dist/
-COPY frontend/dist/ ./frontend/dist
+COPY frontend/dist/ ./docroot/
 
 # Eksponér porten som din app bruger
 EXPOSE 3003

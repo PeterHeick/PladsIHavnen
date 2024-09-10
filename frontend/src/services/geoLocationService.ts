@@ -5,8 +5,11 @@ import { API_KEY } from '@/config';
 let googleLoader = <Loader | null>(null);
 
 export async function getCurrentPosition(): Promise<Position> {
+  console.log('getCurrentPosition');
   return new Promise((resolve, reject) => {
+    console.log('getCurrentPosition: Promise');
     if (navigator.geolocation) {
+      console.log('getCurrentPosition: navigator.geolocation');
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           resolve({
@@ -15,15 +18,16 @@ export async function getCurrentPosition(): Promise<Position> {
           });
         },
         (err) => {
+          console.error('Fejl ved hentning af position:', err.message);
           reject(`Fejl ved hentning af position: ${err.message}`);
         }
       );
     } else {
+      console.error('Geolocation er ikke understøttet af denne browser.');
       reject("Geolocation er ikke understøttet af denne browser.");
     }
   });
 }
-
 
 export async function initGoogleLoader(): Promise<Loader> {
   if (!googleLoader) {
@@ -66,9 +70,9 @@ export async function getCoordinatesFromAddress(address: string): Promise<Positi
 
 export async function getHarborCoordinates(harborName: string): Promise<Position | null> {
   const searchQuery = `${harborName} havn`;
-  
+
   const result = await getCoordinatesFromAddress(searchQuery);
-  
+
   if (result) {
     console.log(`Koordinater for ${harborName}:`, result);
     return result;

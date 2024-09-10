@@ -1,15 +1,10 @@
 <template>
-  <!-- <nav>
-    <router-link to="/">Home</router-link> |
-    <router-link to="/about">About</router-link>
-  </nav> -->
-  <!-- <button v-if="deferredPrompt" @click="installApp">Installér appen</button> -->
   <router-view />
+  <!-- <UpdateNotification /> -->
 </template>
 
 <script setup lang="ts">
-
+// import UpdateNotification from '@/components/UpdateNotification.vue'
 </script>
 
-<style lang="scss">
-</style>
+<style lang="scss"></style>

@@ -4,107 +4,52 @@ import pool from './db';
 
 const router = Router();
 
-
-// GET all harbors
-// router.get('/harbors', async (req: Request, res: Response) => {
-//   try {
-//     const result = await pool.query('SELECT * FROM harbors');
-//     console.log("/harbors GET: result.rows ", result.rows)
-//     res.json(result.rows);
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).send('Server error');
-//   }
-// });
-
-// GET a single harbor by ID
-router.get('/harbor', async (req: Request, res: Response) => {
-  const name = req.query.name;
-  console.log("/harbor GET: name ", name);
-
-  if (!name) {
-    return res.status(400).send('Harbor name is required');
-  }
-
+// POST a new marker
+router.post('/', async (req: Request, res: Response) => {
+  const { position, name } = req.body;
+  console.log("/markers POST: req.body ");
+  console.dir(req.body);
   try {
-    const result = await pool.query(`
-      SELECT id,
-      name,
-      ST_X(position::geometry) as lng,
-      ST_Y(position::geometry) as lat,
-      facilities,
-      capacity,
-      available_spots FROM harbors WHERE name = $1`, [name]
-    );
+    const query = `
+       INSERT INTO markers (position, name)
+       VALUES (ST_SetSRID(ST_MakePoint($1, $2), 4326), $3)
+       RETURNING uuid, ST_X(position::geometry) as lng, ST_Y(position::geometry) as lat, name`
 
-    if (result.rows.length === 0) {
-      console.log("Harbor not found")
-      return res.status(404).send('Harbor not found');
-    }
+    console.log("Peter /POST markers: db query ", query);
+    console.log("Peter /POST markers: position", position);
+    console.log("Peter /POST markers: lng", position.lng);
 
-    const harbor = {
-      id: result.rows[0].id,
-      name: result.rows[0].name,
-      position: {
-        lng: result.rows[0].lng,
-        lat: result.rows[0].lat,
-      },
-      facilities: result.rows[0].facilities,
-      capacity: result.rows[0].capacity,
-      available_spots: result.rows[0].available_spots,
-    };
-    console.log("result ", result.rows[0])
-    res.status(201).json(harbor);
-    // res.status(201).json(result.rows[0]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Server error');
-  }
-});
-
-// POST a new harbor
-router.post('/harbors', async (req: Request, res: Response) => {
-  const { name, position } = req.body;
-  console.log("/harbors POST: req.body ", JSON.stringify(req.body));
-  try {
     const result = await pool.query(
-      `INSERT INTO harbors (name, position, facilities, capacity, available_spots)
-       VALUES ($1, ST_SetSRID(ST_MakePoint($2, $3), 4326), $4, $5, $6)
-       RETURNING ID, name, ST_X(position::geometry) as lng, ST_Y(position::geometry) as lat, facilities, capacity, available_spots`,
-      [name, position.lng, position.lat, '{}', 0, 0]
+      query,
+      [position.lng, position.lat, name]
     );
     const row = result.rows[0];
-    const harbor = {
-      id: row.id,
-      name: row.name,
-      position: { lat: row.lat, lng: row.lng },
-      facilities: row.facilities,
-      capacity: row.capacity,
-      available_spots: row.available_spots,
-    };
-    res.status(201).json(harbor);
+    console.log("post markers row result:")
+    console.dir(row)
+    res.status(201).json({ uuid: row.uuid, position: { lat: row.lat, lng: row.lng }, name: row.name });
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');
   }
 });
 
-// PUT to update harbor position by name
-router.put('/harbors/:name/position', async (req: Request, res: Response) => {
-  const { name } = req.params;
+// PUT to update marker position by uuid
+router.put('/:uuid/position', async (req: Request, res: Response) => {
+  const { uuid } = req.params;
   const { position } = req.body;
-  console.log("/harbors PUT: req.body ", JSON.stringify(req.body));
-  
+  console.log("/markers PUT: uuid, req.body ", uuid, JSON.stringify(req.body));
   try {
     const result = await pool.query(
-      `UPDATE harbors SET position = ST_SetSRID(ST_MakePoint($1, $2), 4326) WHERE name = $3 RETURNING *`,
-      [position.lng, position.lat, name]
+      `UPDATE markers SET position = ST_SetSRID(ST_MakePoint($1, $2), 4326) WHERE uuid = $3 RETURNING *`,
+      [position.lng, position.lat, uuid]
     );
 
     if (result.rowCount === 0) {
-      return res.status(404).send('Harbor not found');
+      return res.status(404).send('Marker not found');
     }
 
+    console.log("Marker PUT result: ")
+    console.dir(result.rows[0])
     res.status(200).json(result.rows[0]);
   } catch (err) {
     console.error(err);
@@ -112,9 +57,7 @@ router.put('/harbors/:name/position', async (req: Request, res: Response) => {
   }
 });
 
-// Den her er vist overflødig
-// GET all markers for a harbor
-router.get('/markers', async (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   const { harborID } = req.query;
   console.log("/markers GET: req.query ", JSON.stringify(req.query));
   if (!harborID) {
@@ -126,7 +69,6 @@ router.get('/markers', async (req: Request, res: Response) => {
       SELECT 
         uuid, 
         name, 
-        type, 
         ST_X(position::geometry) as lng, 
         ST_Y(position::geometry) as lat
       FROM markers
@@ -135,12 +77,12 @@ router.get('/markers', async (req: Request, res: Response) => {
 
     const list = result.rows.map((row: any) => ({
       uuid: row.uuid,
-      position: { lat: row.lat, lng: row.lng },
-      type: row.type,
-      name: row.name
+      name: row.name,
+      position: { lat: row.lat, lng: row.lng }
     }));
 
-    console.log("list ", JSON.stringify(list))
+    console.log("get markers list ");
+    console.dir(list)
     res.json(list);
   } catch (err) {
     console.error(err);
@@ -148,31 +90,43 @@ router.get('/markers', async (req: Request, res: Response) => {
   }
 });
 
-// POST a new marker
-router.post('/markers', async (req: Request, res: Response) => {
-  const { position, type, name, harborID } = req.body;
-  console.log("/markers POST: req.body ", JSON.stringify(req.body));
+router.get('/visible-markers', async (req: Request, res: Response) => {
+  const { northEastLat, northEastLng, southWestLat, southWestLng } = req.query;
+
+  console.log("/visible-markers GET: req.query ");
+  console.dir(req.query);
   try {
     const query = `
-       INSERT INTO markers (harbor_id, position, type, name)
-       VALUES ($1, ST_SetSRID(ST_MakePoint($2, $3), 4326), $4, $5)
-       RETURNING uuid`
-    console.log("/POST markers: db query ", query)
-    console.log("/POST markers: db query params ", [harborID, position.lng, position.lat, type, name])
+      SELECT 
+        uuid,
+        name,
+        ST_X(ST_Transform(position::geometry, 4326)) as lng,
+        ST_Y(ST_Transform(position::geometry, 4326)) as lat
+      FROM markers
+      WHERE 
+        ST_X(ST_Transform(position::geometry, 4326)) BETWEEN $1 AND $2
+        AND ST_Y(ST_Transform(position::geometry, 4326)) BETWEEN $3 AND $4
+    `;
+    console.log("/visible-markers GET: query ", query);
+    const result = await pool.query(query, [southWestLng, northEastLng, southWestLat, northEastLat]);
 
-    const result = await pool.query(
-      query,
-      [harborID, position.lng, position.lat, type, name]
-    );
-    res.status(201).json(result.rows[0]);
+    const list = result.rows.map((row: any) => ({
+      uuid: row.uuid,
+      name: row.name,
+      position: { lat: row.lat, lng: row.lng }
+    }));
+
+    console.log("visible-markers result:")
+    console.table(list)
+    res.json(list);
   } catch (err) {
     console.error(err);
-    res.status(500).send('Server error');
+    res.status(500).json({ error: 'An error occurred while fetching visible markers' });
   }
 });
 
 // DELETE a single marker by ID
-router.delete('/markers/:uuid', async (req: Request, res: Response) => {
+router.delete('/:uuid', async (req: Request, res: Response) => {
   const { uuid } = req.params;
   console.log("/markers DELETE: req.params ", JSON.stringify(req.params));
   try {
@@ -181,103 +135,6 @@ router.delete('/markers/:uuid', async (req: Request, res: Response) => {
       return res.status(404).send('Marker not found');
     }
     res.json(result.rows[0]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Server error');
-  }
-});
-
-router.get('/nearest-markers', async (req: Request, res: Response) => {
-  const { latitude, longitude, radius = 5000 } = req.query;
-
-  console.log("/nearest-markers GET: req.query ", JSON.stringify(req.query));
-  try {
-    const sql =`
-      SELECT 
-        uuid,
-        harbor_id,
-        ST_X(ST_Transform(position::geometry, 4326)) as lng,
-        ST_Y(ST_Transform(position::geometry, 4326)) as lat,
-        name, 
-        type,
-        ST_Distance(position, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography) as distance
-      FROM markers
-      WHERE ST_DWithin(position, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography, $3)
-      ORDER BY distance
-    `;
-    console.log("/nearest-markers GET: sql ", sql);
-    const result = await pool.query(sql, [longitude, latitude, radius]);
-
-    const list = result.rows.map((row: any) => ({
-      uuiid: row.id,
-      harbor_id: row.harbor_id,
-      position: { lat: row.lat, lng: row.lng },
-      type: row.type,
-      name: row.name,
-    }));
-
-    console.log("result ", list)
-    res.json(list);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'An error occurred while fetching nearby markers' });
-  }
-});
-
-router.get('/nearest-harbors', async (req: Request, res: Response) => {
-  const { latitude, longitude, radius = 20000 } = req.query;
-
-  console.log("/nearest-harbors GET: req.query ", JSON.stringify(req.query));
-  try {
-    const result = await pool.query(`
-      SELECT 
-        id,
-        name, 
-        ST_X(ST_Transform(position::geometry, 4326)) as lng,
-        ST_Y(ST_Transform(position::geometry, 4326)) as lat,
-        facilities,
-        capacity,
-        available_spots,
-        ST_Distance(position, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography) as distance
-      FROM harbors
-      WHERE ST_DWithin(position, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography, $3)
-      ORDER BY distance
-      LIMIT 10
-    `, [longitude, latitude, radius]);
-
-    const list = result.rows.map((row: any) => ({
-      id: row.id,
-      name: row.name,
-      position: { lat: row.lat, lng: row.lng },
-      facilities: row.facilities,
-      capacity: row.capacity,
-      available_spots: row.available_spots,
-    }));
-
-    console.log("result ", list)
-    res.json(list);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'An error occurred while fetching nearby harbors' });
-  }
-});
-
-// PUT to update harbor position by name
-router.put('/harbors/:name/position', async (req: Request, res: Response) => {
-  const { name } = req.params;
-  const { position } = req.body;
-  console.log("/harbors PUT: req.body ", JSON.stringify(req.body));
-  try {
-    const result = await pool.query(
-      `UPDATE harbors SET position = ST_SetSRID(ST_MakePoint($1, $2), 4326) WHERE name = $3 RETURNING *`,
-      [position.lng, position.lat, name]
-    );
-
-    if (result.rowCount === 0) {
-      return res.status(404).send('Harbor not found');
-    }
-
-    res.status(200).json(result.rows[0]);
   } catch (err) {
     console.error(err);
     res.status(500).send('Server error');

@@ -16,22 +16,18 @@ EOSQL
 echo "Creating tables..."
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
     CREATE TABLE IF NOT EXISTS harbors (
-        id SERIAL PRIMARY KEY,
+        uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         name VARCHAR(255) NOT NULL,
         position GEOGRAPHY(POINT, 4326) NOT NULL,
-        facilities JSONB,
-        capacity INT,
-        available_spots INT
+        facilities JSONB
     );
 
     CREATE INDEX IF NOT EXISTS idx_harbors_position ON harbors USING GIST(position);
 
     CREATE TABLE IF NOT EXISTS markers (
         uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-        harbor_id INT REFERENCES harbors(id) ON DELETE CASCADE, -- Foreign key til harbors
-        position GEOGRAPHY(POINT, 4326) NOT NULL,
-        type VARCHAR(255) NOT NULL,
-        name VARCHAR(255) NOT NULL
+        name VARCHAR(255) NOT NULL,
+        position GEOGRAPHY(POINT, 4326) NOT NULL
     );
 
     CREATE INDEX IF NOT EXISTS idx_markers_position ON markers USING GIST(position);

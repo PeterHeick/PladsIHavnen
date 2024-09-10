@@ -45,7 +45,7 @@ Konfigurations fil ??
 ```
 
 ### Nyt database layout
-docker-compose down
+docker-compose down -v --rmi all
 docker ps -a
 docker stop erderpladsihavnen_db
 docker rm erderpladsihavnen_db
