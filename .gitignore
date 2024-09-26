@@ -6,7 +6,6 @@ dist
 # Sytem Files
 package-lock.json
 yarn.lock
-package.json
 .gitignore
 
 
