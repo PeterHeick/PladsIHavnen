@@ -1,14 +1,14 @@
-import { ref } from 'vue'
-import { markerTypes, Position } from '@/types'
+import { markerTypes, MarkerWithUUID, Position } from '@/types'
 import store from '@/store'
 import { MapControlOptions, MARKERSZ, zoom } from '@/config'
+import markerService from './markerService';
 
-type MarkerType = google.maps.marker.AdvancedMarkerElement;
+type GoogleMarkerType = google.maps.marker.AdvancedMarkerElement;
 
 class MapService {
   private mapInstance: google.maps.Map | null = null;
   private currentInfoWindow: google.maps.InfoWindow | null = null;
-  private markersMap = new Map<string, MarkerType>();
+  private markersMap = new Map<string, GoogleMarkerType>();
 
   async initMap(element: HTMLElement, options: google.maps.MapOptions): Promise<google.maps.Map> {
     try {
@@ -36,7 +36,7 @@ class MapService {
     this.mapInstance.setZoom(zoom);
   }
 
-  setMarker(uuid: string, position: Position, name: string, title?: string): MarkerType | null {
+  setMarker(uuid: string, position: Position, name: string, title?: string): GoogleMarkerType | null {
     if (!this.mapInstance) {
       console.error('No map instance found');
       return null;
@@ -50,7 +50,7 @@ class MapService {
     const markerContent = this.createMarkerContent(name);
     const zIndex = name === 'Grøn Markør' ? 2 : 1;
 
-    const mark = new google.maps.marker.AdvancedMarkerElement({
+    const googleMarker = new google.maps.marker.AdvancedMarkerElement({
       position,
       map: this.mapInstance,
       gmpDraggable: true,
@@ -58,10 +58,11 @@ class MapService {
       title: title || name,
       zIndex
     });
+    (googleMarker as MarkerWithUUID).uuid = uuid;
 
-    this.addMarkerListeners(mark, uuid, name);
-    this.markersMap.set(uuid, mark);
-    return mark;
+    this.addMarkerListeners(googleMarker, uuid, name);
+    this.markersMap.set(uuid, googleMarker);
+    return googleMarker;
   }
 
   private createMarkerContent(name: string): HTMLElement {
@@ -87,12 +88,13 @@ class MapService {
     return markerContent;
   }
 
-  private addMarkerListeners(mark: MarkerType, uuid: string, name: string): void {
+  private addMarkerListeners(googleMarker: GoogleMarkerType, uuid: string, name: string): void {
     if (name !== 'Havn') {
-      mark.addListener("click", () => this.showDeleteConfirmation(mark, uuid));
+      googleMarker.addListener("click", () => this.showDeleteConfirmation(googleMarker, uuid));
+      googleMarker.addListener('touchstart', () => this.showDeleteConfirmation(googleMarker, uuid));
     }
 
-    mark.addListener('dragend', async (event: google.maps.MapMouseEvent) => {
+    googleMarker.addListener('dragend', async (event: google.maps.MapMouseEvent) => {
       if (!event.latLng) return;
 
       const newPosition = { lat: event.latLng.lat(), lng: event.latLng.lng() };
@@ -100,12 +102,12 @@ class MapService {
         await store.dispatch('harbor/updateHarbor', { uuid, position: newPosition });
         this.centerMapOnLocation(newPosition);
       } else {
-        await store.dispatch('marker/updateMarker', { uuid, position: newPosition });
+        markerService.updateMarker(uuid, newPosition);
       }
     });
   }
 
-  private showDeleteConfirmation(marker: MarkerType, uuid: string): void {
+  private showDeleteConfirmation(googleMarker: GoogleMarkerType, uuid: string): void {
     this.currentInfoWindow?.close();
 
     const infoWindow = new google.maps.InfoWindow({
@@ -117,28 +119,50 @@ class MapService {
       `,
     });
 
-    infoWindow.open(this.mapInstance, marker);
+    infoWindow.open(this.mapInstance, googleMarker);
     this.currentInfoWindow = infoWindow;
 
-    setTimeout(() => {
-      document.getElementById('delete-yes')?.addEventListener('click', () => {
-        this.deleteMarker(uuid);
-        store.dispatch('marker/deleteMarker', uuid);
-        infoWindow.close();
-      });
-      document.getElementById('delete-no')?.addEventListener('click', () => infoWindow.close());
-    }, 100);
+    // Brug MutationObserver til at sikre, at elementerne er klar, før vi tilføjer event listenerne
+    const observer = new MutationObserver(() => {
+      const deleteYesButton = document.getElementById('delete-yes');
+      const deleteNoButton = document.getElementById('delete-no');
+
+      if (deleteYesButton && deleteNoButton) {
+        deleteYesButton.addEventListener('click', () => {
+          this.deleteMarker(uuid);
+          markerService.deleteMarker(uuid)
+            .then(() => infoWindow.close());
+        });
+
+        deleteNoButton.addEventListener('click', () => infoWindow.close());
+
+        // Stop observeren, når elementerne er fundet og event listeners er tilføjet
+        observer.disconnect();
+      }
+    });
+
+    // Start observeren på hele dokumentet eller en specifik container
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // setTimeout(() => {
+    //   document.getElementById('delete-yes')?.addEventListener('click', () => {
+    //     this.deleteMarker(uuid);
+    //     markerService.deleteMarker(uuid)
+    //     .then(() => infoWindow.close());
+    //   });
+    //   document.getElementById('delete-no')?.addEventListener('click', () => infoWindow.close());
+    // }, 100);
   }
 
   deleteMarker(uuid: string): void {
-    const marker = this.markersMap.get(uuid);
-    if (marker) {
-      marker.map = null;  // This removes the marker from the map
+    const googleMarker = this.markersMap.get(uuid);
+    if (googleMarker) {
+      googleMarker.map = null;  // This removes the marker from the map
       this.markersMap.delete(uuid);
     }
   }
 
-  getMarkers(): MarkerType[] {
+  getMarkers(): GoogleMarkerType[] {
     return Array.from(this.markersMap.values());
   }
 }

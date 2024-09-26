@@ -7,7 +7,7 @@ const router = Router();
 // POST a new harbor
 router.post('/', async (req: Request, res: Response) => {
   const { name, position } = req.body;
-  console.log("/harbors POST: req.body ", JSON.stringify(req.body));
+  console.log("\n/harbors POST: req.body ", JSON.stringify(req.body));
   try {
     const result = await pool.query(
       `INSERT INTO harbors (name, position, facilities)
@@ -31,11 +31,33 @@ router.post('/', async (req: Request, res: Response) => {
   }
 });
 
+// DELETE a harbor
+router.delete('/:uuid', async (req: Request, res: Response) => {
+  const { uuid } = req.params;
+  console.log(`\n/harbors DELETE: uuid ${uuid}`);
+  try {
+    const result = await pool.query(
+      'DELETE FROM harbors WHERE uuid = $1 RETURNING *',
+      [uuid]
+    );
+    
+    if (result.rowCount === 0) {
+      return res.status(404).send('Harbor not found');
+    }
+    
+    console.log(`Harbor deleted: ${uuid}`);
+    res.status(200).send('Harbor deleted successfully');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+});
+
 // PUT to update harbor position by name
 router.put('/:uuid/position', async (req: Request, res: Response) => {
   const { uuid } = req.params;
   const { position } = req.body;
-  console.log("/harbor PUT: req.body ", JSON.stringify(req.body));
+  console.log("\n/harbor PUT: req.body ", JSON.stringify(req.body));
   try {
     const result = await pool.query(
       `UPDATE harbors SET position = ST_SetSRID(ST_MakePoint($1, $2), 4326) WHERE uuid = $3 RETURNING *`,
@@ -57,20 +79,29 @@ router.put('/:uuid/position', async (req: Request, res: Response) => {
 
 router.get('/', async (req: Request, res: Response) => {
   const name = req.query.name;
-  console.log("/harbor GET: name ", name);
+  console.log("\n/harbor GET: name ", name);
 
   if (!name) {
     return res.status(400).send('Harbor name is required');
   }
 
+  const search_term = '%' + name + '%';
   try {
+    console.log(`
+      SELECT uuid,
+      name,
+      ST_X(position::geometry) as lng,
+      ST_Y(position::geometry) as lat,
+      facilities
+      FROM harbors WHERE LOWER(name) ILIKE LOWER(${search_term})`);
+
     const result = await pool.query(`
       SELECT uuid,
       name,
       ST_X(position::geometry) as lng,
       ST_Y(position::geometry) as lat,
       facilities
-      FROM harbors WHERE name = $1`, [name]
+      FROM harbors WHERE LOWER(name) ILIKE LOWER($1)`, [search_term]
     );
 
     if (result.rows.length === 0) {
@@ -101,7 +132,7 @@ router.get('/visible-harbors', async (req: Request, res: Response) => {
   const { northEastLat, northEastLng, southWestLat, southWestLng } = req.query;
   console.log( northEastLat, northEastLng, southWestLat, southWestLng );
 
-  console.log("/visible-harbors GET: req.query ");
+  console.log("\n/visible-harbors GET: req.query ");
   console.log('dir ');
   console.dir(req.query);
   try {
@@ -139,7 +170,7 @@ router.get('/visible-harbors', async (req: Request, res: Response) => {
 router.get('/nearest-harbor', async (req: Request, res: Response) => {
   const { latitude, longitude, radius = 20000 } = req.query;
 
-  console.log("/nearest-harbor GET: req.query ", JSON.stringify(req.query));
+  console.log("\n/nearest-harbor GET: req.query ", JSON.stringify(req.query));
   try {
     const result = await pool.query(`
       SELECT 
@@ -176,7 +207,7 @@ router.get('/nearest-harbor', async (req: Request, res: Response) => {
 router.put('/:uuid/facilities', async (req: Request, res: Response) => {
   const { uuid } = req.params;
   const { facilities } = req.body;
-  console.log("/harbor/:uuid/facilities PUT: req.body ", JSON.stringify(req.body));
+  console.log("\n/harbor/:uuid/facilities PUT: req.body ", JSON.stringify(req.body));
 
   try {
     // Først, hent de eksisterende faciliteter

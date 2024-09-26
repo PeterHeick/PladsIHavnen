@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios'
-import { LocationMarker, Position } from '@/types'
+import { GoogleMarkerType, LocationMarker, Position } from '@/types'
 import { API_URL } from '@/config'
 import { mapService } from './mapService'
 import harborService from './harborService'
@@ -29,15 +29,17 @@ class MarkerService {
     markers?.forEach(this.showMark);
   }
 
-  showMark(marker: LocationMarker): google.maps.marker.AdvancedMarkerElement | null {
+  showMark(marker: LocationMarker): GoogleMarkerType | null {
     return mapService.setMarker(marker.uuid, marker.position, marker.name);
   }
 
-  async addMarker(marker: LocationMarker): Promise<LocationMarker> {
+  async addMarker(marker: LocationMarker): Promise<GoogleMarkerType | null> {
     try {
       const response = await axios.post(URL, marker);
-      await harborService.updateHarborFacilities(marker.name);
-      return response.data;
+      const newMarker: LocationMarker = response.data;
+      const googleMarker = mapService.setMarker(newMarker.uuid, newMarker.position, newMarker.name)
+      await harborService.updateHarborFacilities(newMarker.name, true);
+      return googleMarker;
     } catch (error) {
       this.handleError(error, 'addMarker');
       throw error;

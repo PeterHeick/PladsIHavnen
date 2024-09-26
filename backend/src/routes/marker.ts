@@ -7,7 +7,7 @@ const router = Router();
 // POST a new marker
 router.post('/', async (req: Request, res: Response) => {
   const { position, name } = req.body;
-  console.log("/markers POST: req.body ");
+  console.log("\n/markers POST: req.body ");
   console.dir(req.body);
   try {
     const query = `
@@ -37,7 +37,7 @@ router.post('/', async (req: Request, res: Response) => {
 router.put('/:uuid/position', async (req: Request, res: Response) => {
   const { uuid } = req.params;
   const { position } = req.body;
-  console.log("/markers PUT: uuid, req.body ", uuid, JSON.stringify(req.body));
+  console.log("\n/markers PUT: uuid, req.body ", uuid, JSON.stringify(req.body));
   try {
     const result = await pool.query(
       `UPDATE markers SET position = ST_SetSRID(ST_MakePoint($1, $2), 4326) WHERE uuid = $3 RETURNING *`,
@@ -59,7 +59,7 @@ router.put('/:uuid/position', async (req: Request, res: Response) => {
 
 router.get('/', async (req: Request, res: Response) => {
   const { harborID } = req.query;
-  console.log("/markers GET: req.query ", JSON.stringify(req.query));
+  console.log("\n/markers GET: req.query ", JSON.stringify(req.query));
   if (!harborID) {
     return res.status(400).send('Harbor id is required');
   }
@@ -93,7 +93,7 @@ router.get('/', async (req: Request, res: Response) => {
 router.get('/visible-markers', async (req: Request, res: Response) => {
   const { northEastLat, northEastLng, southWestLat, southWestLng } = req.query;
 
-  console.log("/visible-markers GET: req.query ");
+  console.log("\n/visible-markers GET: req.query ");
   console.dir(req.query);
   try {
     const query = `
@@ -128,7 +128,7 @@ router.get('/visible-markers', async (req: Request, res: Response) => {
 // DELETE a single marker by ID
 router.delete('/:uuid', async (req: Request, res: Response) => {
   const { uuid } = req.params;
-  console.log("/markers DELETE: req.params ", JSON.stringify(req.params));
+  console.log("\n/markers DELETE: req.params ", JSON.stringify(req.params));
   try {
     const result = await pool.query('DELETE FROM markers WHERE UUID = $1 RETURNING *', [uuid]);
     if (result.rowCount === 0) {

@@ -8,6 +8,7 @@ import * as mimeTypes from 'mime';
 import apiHarborRoutes from './routes/harbor';
 import apiMarkerRoutes from './routes/marker';
 import 'dotenv/config';
+import packageInfo from '../package.json'
 
 const app = express();
 const PORT = process.env.PORT || 3003;
@@ -82,6 +83,10 @@ app.use(
 
 app.use('/api/harbor', apiHarborRoutes);
 app.use('/api/marker', apiMarkerRoutes);
+
+app.get('/api/version', (req, res) => {
+  res.json({ version: packageInfo.version });
+});
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(docRoot, 'index.html'));

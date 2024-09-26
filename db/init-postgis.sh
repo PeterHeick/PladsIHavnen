@@ -31,6 +31,14 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     );
 
     CREATE INDEX IF NOT EXISTS idx_markers_position ON markers USING GIST(position);
+
+    -- Opret tabel til tekstinformation om havne
+    CREATE TABLE IF NOT EXISTS harbor_info (
+        harbor_uuid UUID REFERENCES harbors(uuid) ON DELETE CASCADE,
+        date DATE NOT NULL,
+        content TEXT NOT NULL
+        link VARCHAR(2048)
+    );
 EOSQL
 
 # # # Indsæt eksempeldata (dette kan fjernes i produktionsmiljøer)

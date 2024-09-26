@@ -7,12 +7,15 @@ dist
 package-lock.json
 yarn.lock
 package.json
+.gitignore
 
 
 # local env files
 .env.local
 .env.*.local
 .env
+.env.development
+.env.production
 
 # Log files
 npm-debug.log*
@@ -38,3 +41,9 @@ unisoft_qr_code.png
 Er_der_plads_i_havnen.odt
 server.cert
 server.key
+build
+setup
+ServiceWorker.odt
+Vuex-forklaring.odt
+/old
+venv

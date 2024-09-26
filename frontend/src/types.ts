@@ -10,6 +10,7 @@ export interface MarkerType {
   name: string,
   icon: string
 }
+export type GoogleMarkerType = google.maps.marker.AdvancedMarkerElement | null;
 export const markerTypes: MarkerType[] = [
   { name: 'Båd', icon: boatIcon },
   { name: 'Havn', icon: anchorIcon },
@@ -68,4 +69,8 @@ export interface RootState {
 export interface State extends RootState {
   markers: MarkerState;
   harbors: HarborState;
+}
+
+export interface MarkerWithUUID extends google.maps.marker.AdvancedMarkerElement {
+  uuid?: string;
 }

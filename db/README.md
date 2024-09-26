@@ -91,3 +91,7 @@ Bash
 
 docker load -i mit-express-app.tar
 docker load -i erderpladsihavnen_db.tar
+
+
+## Importer havne
+Havne kan importeres fra filen havne.txt vha. programmmet import_havne.py

@@ -6,6 +6,6 @@ yarn build
 cd ..
 docker-compose build backend
 docker save -o backend.tar er-der-plads-i-havnen_backend
-scp backend.tar unisoft.dk:
-ssh unisoft.dk 'sh setup'
-ssh peter@unisoft.dk 'sh setup'
+scp backend.tar pladsihavnen.dk:
+ssh pladsihavnen.dk 'sh setup'
+ssh peter@pladsihavnen.dk 'sh setup'

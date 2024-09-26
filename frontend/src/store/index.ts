@@ -1,6 +1,6 @@
 import { createStore, Store, ModuleTree } from 'vuex';
 import { RootState, State, Position, MarkerState, HarborState } from '@/types';
-import markerModule from './modules/markerModule';
+// import markerModule from './modules/markerModule';
 import harborModule from './modules/harborModule';
 // import mapModule from './modules/mapModule';
 
@@ -24,7 +24,7 @@ const store = createStore({
     // Globale getters...
   },
   modules: {
-    marker: markerModule,
+    // marker: markerModule,
     harbor: harborModule,
     // map: mapModule
   }

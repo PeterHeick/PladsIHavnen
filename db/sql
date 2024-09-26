@@ -1,0 +1,3 @@
+db=`docker ps -a | sed -n '/erderpladsihavnen_db/ s/.* //p'`
+docker exec -it $db bash -c "psql -U pihuser -d pladsihavnen" 
+

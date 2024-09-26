@@ -5,14 +5,14 @@
       <span>{{ currentHarbor?.name || "" }}</span>
       <SearchBar @search="handleSearch" />
     </div>
-
     <div class="second-top-bar">
       <span @click="toggleInfo">
         <img :src="infoIcon" alt="Info" class="info-icon" />
       </span>
-      <span v-for="facilityName in facilitiesArray" :key="facilityName" class="facility-icon">
-        <img :src="getFacilityIcon(facilityName)" :alt="facilityName" :title="facilityName"
-          class="header-marker-icon" />
+      <span v-for="facilityName in facilitiesArray" :key="facilityName" class="facility-icon"
+        @click="toggleActiveFacility(facilityName)">
+        <img :src="getFacilityIcon(facilityName)" :alt="facilityName" :title="facilityName" class="header-marker-icon"
+          :class="{ 'active': activeFacility === facilityName }" />
       </span>
     </div>
 
@@ -46,10 +46,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, computed, onUnmounted } from 'vue'
 import { useStore } from 'vuex'
 import { debounce } from 'lodash-es'
-import { LocationMarker, MarkerType, markerTypes, greenMarkerType } from '@/types'
+import { LocationMarker, MarkerType, markerTypes, greenMarkerType, GoogleMarkerType } from '@/types'
 import { getCurrentPosition } from '@/services/geoLocationService'
 import { mapService } from '@/services/mapService'
 import markerService from '@/services/markerService'
@@ -63,19 +63,20 @@ const showSplash = ref(true)
 const mapElement = ref<HTMLElement | null>(null)
 const selectedMarkerType = ref<MarkerType | null>(null)
 const showInfo = ref(false)
-let selectedMarker: google.maps.marker.AdvancedMarkerElement | null = null
+// let selectedMarker: google.maps.marker.AdvancedMarkerElement | null = null
+const activeFacility = ref<string | null>(null);
 
 const toggleInfo = () => {
   showInfo.value = !showInfo.value
 }
 
-const facilitiesArray = computed(() => 
+const facilitiesArray = computed(() =>
   Object.entries(currentHarbor.value?.facilities || {})
     .filter(([key, value]) => value === true && key !== 'Grøn Markør')
     .map(([key]) => key)
 )
 
-const filteredMarkerTypes = computed(() => 
+const filteredMarkerTypes = computed(() =>
   markerTypes.filter(type => !['Havn', 'Båd'].includes(type.name))
 )
 
@@ -83,6 +84,30 @@ const getFacilityIcon = (facilityName: string) => {
   const markerType = markerTypes.find(type => type.name.toLowerCase() === facilityName.toLowerCase())
   return markerType?.icon || ''
 }
+
+const toggleActiveFacility = (facilityName: string) => {
+  if (activeFacility.value === facilityName) {
+    activeFacility.value = null;  // Fjern aktiv status, hvis det allerede er aktivt
+  } else {
+    activeFacility.value = facilityName;  // Gør det klikbare ikon aktivt
+  }
+};
+
+const deleteActiveFacility = () => {
+  if (activeFacility.value && currentHarbor.value) {
+    // Fjern faciliteten ved at slette nøglen fra objektet
+    delete currentHarbor.value.facilities[activeFacility.value];
+    harborService.updateHarborFacilities(activeFacility.value, false);
+    activeFacility.value = null;  // Ryd aktivt ikon efter sletning
+  }
+};
+
+const handleDeleteKey = (event: KeyboardEvent) => {
+  if (event.key === 'Delete') {
+    deleteActiveFacility();
+    harborService.deleteHarbor();
+  }
+};
 
 const handleSearch = async (harborName: string) => {
   try {
@@ -101,38 +126,14 @@ const placeMarker = async (event: google.maps.MapMouseEvent) => {
   if (!selectedMarkerType.value || !event.latLng) return
 
   const latLng = { lat: event.latLng.lat(), lng: event.latLng.lng() }
-  const newMarker: Omit<LocationMarker, 'uuid'> = {
+  const newMarker: LocationMarker = {
+    uuid: '',
     position: latLng,
     name: selectedMarkerType.value.name
   }
 
-  try {
-    const marker = await store.dispatch('marker/addMarker', { newMarker })
-    const mark = mapService.setMarker(marker.uuid, marker.position, marker.name)
-    if (mark) {
-      mark.addListener("click", () => selectMarker(mark))
-      selectedMarkerType.value = null
-    }
-  } catch (error) {
-    console.error('Error placing marker:', error)
-  }
-}
-
-const selectMarker = (marker: google.maps.marker.AdvancedMarkerElement) => {
-  selectedMarker = selectedMarker === marker ? null : marker
-}
-
-const removeSelectedMarker = () => {
-  if (selectedMarker) {
-    store.dispatch('marker/deleteMarker', selectedMarker)
-    selectedMarker = null
-  }
-}
-
-const handleDeleteKeyPress = (event: KeyboardEvent) => {
-  if (event.key === 'Delete' && selectedMarker) {
-    removeSelectedMarker()
-  }
+  markerService.addMarker(newMarker);
+  selectedMarkerType.value = null;
 }
 
 const initMap = async () => {
@@ -179,7 +180,6 @@ const initMap = async () => {
     }, 500)
 
     map.addListener('idle', handleMapIdle)
-    window.addEventListener('keydown', handleDeleteKeyPress)
   } catch (error) {
     console.error('Error initializing map:', error)
   }
@@ -191,11 +191,17 @@ const selectMarkerType = (markerType: MarkerType) => {
 
 onMounted(async () => {
   await initMap()
-})
+  window.addEventListener('keydown', handleDeleteKey);
+});
 
 onUnmounted(() => {
-  window.removeEventListener('keydown', handleDeleteKeyPress)
-})
+  window.removeEventListener('keydown', handleDeleteKey);
+});
+
+
+
+// onUnmounted(() => {
+// })
 </script>
 
 <style scoped>
@@ -242,7 +248,7 @@ onUnmounted(() => {
 .info-icon-container {
   position: absolute;
   top: 150px;
-  left: 10px;
+  left: 0px;
   z-index: 1000;
   cursor: move;
   margin-right: 5px;
@@ -328,8 +334,7 @@ onUnmounted(() => {
   cursor: pointer;
   width: 18px;
   height: 18px;
-  margin-left: 5px;
-  margin-right: 5px;
+  margin-right: 10px;
 }
 
 .info-text {
@@ -343,6 +348,7 @@ onUnmounted(() => {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
   z-index: 1000;
 }
+
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.5s ease;

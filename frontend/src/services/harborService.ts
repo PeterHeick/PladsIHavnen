@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios'
-import { FacilityName, Harbor, Position } from '@/types'
+import { FacilityName, GoogleMarkerType, Harbor, MarkerWithUUID, Position } from '@/types'
 import { API_URL } from '@/config'
 import { mapService } from './mapService'
 import { ref } from 'vue'
@@ -8,6 +8,7 @@ const URL = `${API_URL}/harbor/`
 export const currentHarbor = ref<Harbor | null>(null)
 
 class HarborService {
+  activeHarbor: GoogleMarkerType | null = null;
   async fetchNearestHarbor(lat: number, lng: number, radius = 20000): Promise<Harbor> {
     try {
       const response = await axios.get(`${URL}nearest-harbor`, {
@@ -54,11 +55,39 @@ class HarborService {
     }
   }
 
+  async deleteHarbor(): Promise<void> {
+    if (!this.activeHarbor) {
+      return
+    }
+    const uuid = (this.activeHarbor as MarkerWithUUID).uuid;
+    if (uuid) {
+      try {
+        await axios.delete(`${URL}/${uuid}`);
+        mapService.deleteMarker(uuid);
+      } catch (error) {
+        this.handleError(error, 'deleteHarbor');
+        throw error;
+      }
+    }
+  }
+
   async setVisibleHarbors(bounds: google.maps.LatLngBounds): Promise<void> {
     const harbors = await this.getVisibleHarbors(bounds)
     harbors?.forEach(harbor => {
-      mapService.setMarker(harbor.uuid, harbor.position, 'Havn', harbor.name)
+      const googleMarker = mapService.setMarker(harbor.uuid, harbor.position, 'Havn', harbor.name)
+      googleMarker?.addListener('click', () => {
+        this.toggleActiveHarbor(harbor.name, googleMarker)
+      })
     })
+  }
+
+  toggleActiveHarbor = (harborName: string, googleMarker: GoogleMarkerType) => {
+    console.log('toggleActiveHarbor', harborName)
+    if (this.activeHarbor === googleMarker) {
+      this.activeHarbor = null;  // Fjern aktiv status, hvis det allerede er aktivt
+    } else {
+      this.activeHarbor = googleMarker;  // Gør det klikbare ikon aktivt
+    }
   }
 
   async updateHarborPosition(uuid: string, position: Position): Promise<Harbor> {
@@ -71,14 +100,14 @@ class HarborService {
     }
   }
 
-  async updateHarborFacilities(facility: FacilityName): Promise<Harbor | undefined> {
+  async updateHarborFacilities(facility: FacilityName, add: boolean): Promise<Harbor | undefined> {
     if (!currentHarbor.value) {
       console.error('No current harbor')
       return
     }
 
     try {
-      const facilities = { [facility]: true }
+      const facilities = { [facility]: add }
       const response = await axios.put(`${URL}${currentHarbor.value.uuid}/facilities`, { facilities })
       currentHarbor.value = response.data
       return response.data

@@ -5,8 +5,12 @@ import router from "./router";
 import store from "./store";
 import { initGoogleLoader } from './services/geoLocationService'
 import packageInfo from '../package.json'
+import systemService from "./services/systemService";
 
-console.log(`App version: ${packageInfo.version}`);
+systemService.getServerVersion()
+  .then(version => {
+    console.log(`App version: ${packageInfo.version}, Server version: ${version}`)
+  });
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
