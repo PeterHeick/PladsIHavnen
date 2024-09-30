@@ -44,9 +44,13 @@ export async function getCoordinatesFromAddress(address: string): Promise<Positi
   console.log('getCoordinatesFromAddress:', address);
   try {
 
-    const loader = await initGoogleLoader();
-    const google = await loader!.load();
-    const { Geocoder } = await google.maps.importLibrary("geocoding") as google.maps.GeocodingLibrary;
+    await initGoogleLoader();
+    // const google = await loader.load();
+    // const { Geocoder } = await google.maps.importLibrary("geocoding") as google.maps.GeocodingLibrary;
+    if (googleLoader === null) {
+      throw new Error('Google Loader not initialized');
+    }
+    const { Geocoder } = await googleLoader.importLibrary("geocoding") as google.maps.GeocodingLibrary;
 
     const geocoder = new Geocoder();
     const result = await geocoder.geocode({ address });

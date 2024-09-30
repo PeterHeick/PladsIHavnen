@@ -1,6 +1,6 @@
 {
   "name": "er-der-plads-i-havnen-backend",
-  "version": "1.0.4",
+  "version": "1.0.6",
   "main": "server.js",
   "scripts": {
     "start": "node dist/server.js",

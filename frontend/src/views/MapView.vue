@@ -2,7 +2,7 @@
   <div class="map-container">
     <SplashScreen v-if="showSplash" />
     <div class="top-bar">
-      <span>{{ currentHarbor?.name || "" }}</span>
+      <span>{{ currentHarbor?.name || "" }}  {{ friHavn }}</span>
       <SearchBar @search="handleSearch" />
     </div>
     <div class="second-top-bar">
@@ -49,7 +49,7 @@
 import { ref, onMounted, computed, onUnmounted } from 'vue'
 import { useStore } from 'vuex'
 import { debounce } from 'lodash-es'
-import { LocationMarker, MarkerType, markerTypes, greenMarkerType, GoogleMarkerType } from '@/types'
+import { LocationMarker, MarkerType, markerTypes, greenMarkerType } from '@/types'
 import { getCurrentPosition } from '@/services/geoLocationService'
 import { mapService } from '@/services/mapService'
 import markerService from '@/services/markerService'
@@ -64,17 +64,18 @@ const mapElement = ref<HTMLElement | null>(null)
 const selectedMarkerType = ref<MarkerType | null>(null)
 const showInfo = ref(false)
 // let selectedMarker: google.maps.marker.AdvancedMarkerElement | null = null
-const activeFacility = ref<string | null>(null);
+const activeFacility = ref<string>("");
 
 const toggleInfo = () => {
   showInfo.value = !showInfo.value
 }
 
-const facilitiesArray = computed(() =>
-  Object.entries(currentHarbor.value?.facilities || {})
-    .filter(([key, value]) => value === true && key !== 'Grøn Markør')
+const friHavn = computed(() => currentHarbor.value?.facilities["FH"]? "(FH)": "");
+const facilitiesArray = computed(() => {
+  return Object.entries(currentHarbor.value?.facilities || {})
+    .filter(([key, value]) => value === true && key !== 'Grøn Markør' && key !== 'FH')
     .map(([key]) => key)
-)
+})
 
 const filteredMarkerTypes = computed(() =>
   markerTypes.filter(type => !['Havn', 'Båd'].includes(type.name))
@@ -87,7 +88,7 @@ const getFacilityIcon = (facilityName: string) => {
 
 const toggleActiveFacility = (facilityName: string) => {
   if (activeFacility.value === facilityName) {
-    activeFacility.value = null;  // Fjern aktiv status, hvis det allerede er aktivt
+    activeFacility.value = "";  // Fjern aktiv status, hvis det allerede er aktivt
   } else {
     activeFacility.value = facilityName;  // Gør det klikbare ikon aktivt
   }
@@ -98,7 +99,7 @@ const deleteActiveFacility = () => {
     // Fjern faciliteten ved at slette nøglen fra objektet
     delete currentHarbor.value.facilities[activeFacility.value];
     harborService.updateHarborFacilities(activeFacility.value, false);
-    activeFacility.value = null;  // Ryd aktivt ikon efter sletning
+    activeFacility.value = "";  // Ryd aktivt ikon efter sletning
   }
 };
 

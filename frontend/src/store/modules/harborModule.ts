@@ -23,7 +23,7 @@ const harborModule: Module<HarborState, RootState> = {
     }
   },
   actions: {
-    async createHarbor({ commit, dispatch }: ActionContext<any, any>, harbor: Harbor) {
+    async createHarbor({ commit }: ActionContext<any, any>, harbor: Harbor) {
       try {
         const h = await harborService.createHarbor({ name: harbor.name, position: harbor.position });
 
@@ -36,7 +36,7 @@ const harborModule: Module<HarborState, RootState> = {
       }
     },
 
-    async updateHarbor({ commit, dispatch }: ActionContext<any, any>, {uuid, position}) {
+    async updateHarbor({ commit }: ActionContext<any, any>, {uuid, position}) {
       try {
         console.log('updateHarbor:', uuid, position);
         const harbor = await harborService.updateHarborPosition(uuid, position);
@@ -50,7 +50,7 @@ const harborModule: Module<HarborState, RootState> = {
       }
     },
 
-    async searchHarbor({ commit, dispatch }, harborName: string) {
+    async searchHarbor({ commit }, harborName: string) {
       try {
         // Forsøg at hente havnen først
         console.info('searchHarbor:', harborName);

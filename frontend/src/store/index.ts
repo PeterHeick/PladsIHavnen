@@ -1,5 +1,5 @@
-import { createStore, Store, ModuleTree } from 'vuex';
-import { RootState, State, Position, MarkerState, HarborState } from '@/types';
+import { createStore, Store } from 'vuex';
+import { RootState, State, Position } from '@/types';
 // import markerModule from './modules/markerModule';
 import harborModule from './modules/harborModule';
 // import mapModule from './modules/mapModule';

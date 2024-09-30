@@ -41,8 +41,8 @@ Er_der_plads_i_havnen.odt
 server.cert
 server.key
 build
-setup
 ServiceWorker.odt
 Vuex-forklaring.odt
 /old
 venv
+db_connection.py

@@ -31,5 +31,14 @@ module.exports = defineConfig({
     port: 8080,
     hot: true,
   },
+  configureWebpack: {
+    plugins: [
+      new (require('webpack')).DefinePlugin({
+        __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: false,
+        __VUE_OPTIONS_API__: true, // Set to true or false based on your needs
+        __VUE_PROD_DEVTOOLS__: false // Set to true or false based on your needs
+      })
+    ]
+  }
 })
 

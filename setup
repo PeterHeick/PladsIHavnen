@@ -1,10 +1,11 @@
 #!/bin/bash
 
 dir=$(cd $(dirname $0); pwd)
+echo $dir
 
 docker-compose up -d db
 sleep 1
-gnome-terminal --window --geometry=90x20 -- bash -c 'cd $dir/frontend; yarn build:dev; exec bash'
-gnome-terminal --window --geometry=90x30 -- bash -c 'cd $dir/backend; yarn dev; exec bash'
-gnome-terminal --window --geometry=120x20 -- bash -c '$dir/db/sql'
+gnome-terminal --window --geometry=90x20 -- bash -c "cd $dir/frontend; yarn build:dev; exec bash"
+gnome-terminal --window --geometry=90x30 -- bash -c "cd $dir/backend; yarn dev; exec bash"
+gnome-terminal --window --geometry=120x20 -- bash -c "$dir/db/sql"
 
