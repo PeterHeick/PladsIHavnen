@@ -4,4 +4,4 @@ psycopg2-binary
 bs4
 llama_index
 langchain_openai
-serpapi
+google-search-results
